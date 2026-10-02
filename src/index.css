@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "Outfit", ui-sans-serif, sans-serif;
+  --color-navy: #07111f;
+  --color-ink: #101828;
+  --color-blue: #1f6bff;
+  --color-cyan: #12c6e6;
+  --color-violet: #6d3df5;
+  --color-mist: #f4f7fb;
+  --color-line: #e4eaf3;
+  --color-muted: #5c6b82;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #f7f9fc;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: #d7e6ff;
+  color: #07111f;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.reveal-out {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.reveal-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float-slow {
+  animation: floaty 7s ease-in-out infinite;
+}
+
+.float-slower {
+  animation: floaty 8.5s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+
+.field {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid var(--color-line);
+  background: white;
+  padding: 0.8rem 0.95rem;
+  color: var(--color-ink);
+  outline: none;
+}
+
+.field:focus {
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 4px rgba(31, 107, 255, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal-out,
+  .reveal-in,
+  .float-slow,
+  .float-slower {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
