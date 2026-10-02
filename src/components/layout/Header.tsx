@@ -90,7 +90,7 @@ export function Header() {
               Log in
             </Button>
           )}
-          <Button to="/courses">Enroll Now</Button>
+          <Button to="/enroll">Enroll Now</Button>
         </div>
         <button
           type="button"
@@ -133,7 +133,7 @@ export function Header() {
                 Log in
               </Button>
             )}
-            <Button to="/courses">Enroll Now</Button>
+            <Button to="/enroll">Enroll Now</Button>
           </div>
         </div>
       ) : null}

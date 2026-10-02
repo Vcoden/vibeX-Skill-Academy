@@ -1,11 +1,6 @@
--- VibeX Skills Academy starter content.
+-- VibeX Skills Academy catalog.
 -- Run after schema.sql.
--- Replace sample testimonials, mentors, and community notes with real people before a public launch.
---
--- The original brief listed categories 01-09 and was cut off during UI/UX.
--- "Web App Design" completes that curriculum.
--- Categories 10 and 11 are starter programs so the academy has 11 skills in the database.
--- Edit or replace them from the admin dashboard. Nothing here is hardcoded in the app.
+-- Testimonials, mentors, and workshops stay empty until the academy adds real records.
 
 insert into public.course_categories (
   id, slug, sort_order, code, name, subtitle, summary, description, icon,
@@ -95,23 +90,26 @@ insert into public.course_categories (
 ),
 (
   'a0000000-0000-4000-8000-000000000010',
-  'video-production', 10, '10', 'Video Production', null,
-  'Edit and deliver videos that hold attention and meet a client brief.',
-  'Learn editing, short-form storytelling, sound, and delivery. You finish a portfolio edit produced from a client-style brief. This starter program can be renamed in the admin dashboard.',
-  'Clapperboard', 145000, 30, 'Online & Offline', null,
-  array['Complete a portfolio edit', 'Cut a short-form piece', 'Export and deliver files correctly'],
+  'shopify-dropshipping', 10, '10', 'SHOPIFY DROPSHIPPING', 'Store Development & E-Commerce',
+  'Plan, build, customize, and manage a professional Shopify store.',
+  'Learn Shopify setup, product pages, branding, payments, shipping, and the fundamentals of dropshipping operations. This is store-building training. It does not promise sales or income.',
+  'ShoppingBag', 180000, 30, 'Online & Offline',
+  'This program teaches store building and e-commerce operations. VibeX Skills Academy does not guarantee sales, orders, or income.',
+  array['Set up a Shopify store structure', 'Publish product pages', 'Configure payments and shipping', 'Explain dropshipping operations without promising sales'],
   true
 ),
 (
   'a0000000-0000-4000-8000-000000000011',
-  'virtual-assistance', 11, '11', 'Virtual Assistance', null,
-  'Support clients professionally online, including founders and teams abroad.',
-  'Practice communication, operations, research, and the tools used by virtual assistants. You build a service offer and a client onboarding kit. This starter program can be renamed in the admin dashboard.',
-  'Headset', 100000, 30, 'Online & Offline', null,
-  array['Write a VA service offer', 'Set up a client onboarding kit', 'Practice professional remote communication'],
+  'token-creation', 11, '11', 'TOKEN CREATION & TOKEN LAUNCHING', null,
+  'Learn the technical foundations of creating, testing, and preparing a token launch.',
+  'Cover token concepts, smart-contract basics, testnet deployment, documentation, and a careful launch workflow. The work emphasizes testing, security, transparency, and legitimate projects.',
+  'Coins', 200000, 30, 'Online & Offline',
+  'This program is technical education. VibeX Skills Academy does not guarantee token value, investment returns, fundraising, or financial performance. Testing, security, transparency, and legitimate project creation come first.',
+  array['Explain token standards and tokenomics basics', 'Deploy and test a contract on a testnet', 'Prepare documentation for a legitimate project'],
   true
 )
-on conflict (slug) do update set
+on conflict (id) do update set
+  slug = excluded.slug,
   sort_order = excluded.sort_order,
   code = excluded.code,
   name = excluded.name,
@@ -125,6 +123,9 @@ on conflict (slug) do update set
   risk_notice = excluded.risk_notice,
   outcomes = excluded.outcomes,
   is_published = excluded.is_published;
+
+delete from public.course_categories
+where slug in ('video-production', 'virtual-assistance');
 
 insert into public.course_subcategories (course_category_id, title, sort_order) values
 ('a0000000-0000-4000-8000-000000000001', 'Forex Trading Fundamentals', 1),
@@ -206,28 +207,75 @@ insert into public.course_subcategories (course_category_id, title, sort_order) 
 ('a0000000-0000-4000-8000-000000000009', 'Design Systems', 6),
 ('a0000000-0000-4000-8000-000000000009', 'Mobile App Design', 7),
 ('a0000000-0000-4000-8000-000000000009', 'Web App Design', 8),
-('a0000000-0000-4000-8000-000000000010', 'Video Editing Foundations', 1),
-('a0000000-0000-4000-8000-000000000010', 'Short-Form Content', 2),
-('a0000000-0000-4000-8000-000000000010', 'Storytelling for Clients', 3),
-('a0000000-0000-4000-8000-000000000010', 'Sound and Pacing', 4),
-('a0000000-0000-4000-8000-000000000010', 'Export and Delivery', 5),
-('a0000000-0000-4000-8000-000000000010', 'Portfolio Edit', 6),
-('a0000000-0000-4000-8000-000000000011', 'Professional Communication', 1),
-('a0000000-0000-4000-8000-000000000011', 'Inbox and Calendar Systems', 2),
-('a0000000-0000-4000-8000-000000000011', 'Research for Clients', 3),
-('a0000000-0000-4000-8000-000000000011', 'Documentation and SOPs', 4),
-('a0000000-0000-4000-8000-000000000011', 'Tools for Remote Teams', 5),
-('a0000000-0000-4000-8000-000000000011', 'Working with International Clients', 6),
-('a0000000-0000-4000-8000-000000000011', 'Building a VA Service Offer', 7)
+('a0000000-0000-4000-8000-000000000009', 'Usability Testing', 9),
+('a0000000-0000-4000-8000-000000000009', 'Information Architecture', 10),
+('a0000000-0000-4000-8000-000000000009', 'Interaction Design', 11),
+('a0000000-0000-4000-8000-000000000009', 'Figma Workflow', 12),
+('a0000000-0000-4000-8000-000000000010', 'Shopify Fundamentals', 1),
+('a0000000-0000-4000-8000-000000000010', 'Shopify Store Setup', 2),
+('a0000000-0000-4000-8000-000000000010', 'Store Structure & Navigation', 3),
+('a0000000-0000-4000-8000-000000000010', 'Product Research', 4),
+('a0000000-0000-4000-8000-000000000010', 'Product Listing', 5),
+('a0000000-0000-4000-8000-000000000010', 'Product Page Optimization', 6),
+('a0000000-0000-4000-8000-000000000010', 'Shopify Theme Customization', 7),
+('a0000000-0000-4000-8000-000000000010', 'Store Branding', 8),
+('a0000000-0000-4000-8000-000000000010', 'Collections & Categories', 9),
+('a0000000-0000-4000-8000-000000000010', 'Payment Configuration', 10),
+('a0000000-0000-4000-8000-000000000010', 'Shipping Configuration', 11),
+('a0000000-0000-4000-8000-000000000010', 'E-Commerce Marketing', 12),
+('a0000000-0000-4000-8000-000000000010', 'Conversion Optimization', 13),
+('a0000000-0000-4000-8000-000000000010', 'Dropshipping Fundamentals', 14),
+('a0000000-0000-4000-8000-000000000010', 'Supplier Research', 15),
+('a0000000-0000-4000-8000-000000000010', 'Order Management', 16),
+('a0000000-0000-4000-8000-000000000010', 'Customer Service', 17),
+('a0000000-0000-4000-8000-000000000010', 'Store Analytics', 18),
+('a0000000-0000-4000-8000-000000000010', 'E-Commerce Growth Strategy', 19),
+('a0000000-0000-4000-8000-000000000011', 'Blockchain Fundamentals', 1),
+('a0000000-0000-4000-8000-000000000011', 'Token Concepts', 2),
+('a0000000-0000-4000-8000-000000000011', 'Token Standards', 3),
+('a0000000-0000-4000-8000-000000000011', 'Tokenomics Fundamentals', 4),
+('a0000000-0000-4000-8000-000000000011', 'Smart Contract Fundamentals', 5),
+('a0000000-0000-4000-8000-000000000011', 'Token Contract Development', 6),
+('a0000000-0000-4000-8000-000000000011', 'Testnet Deployment', 7),
+('a0000000-0000-4000-8000-000000000011', 'Wallet Integration', 8),
+('a0000000-0000-4000-8000-000000000011', 'Contract Testing', 9),
+('a0000000-0000-4000-8000-000000000011', 'Token Deployment Workflow', 10),
+('a0000000-0000-4000-8000-000000000011', 'Basic Smart Contract Security', 11),
+('a0000000-0000-4000-8000-000000000011', 'Token Verification', 12),
+('a0000000-0000-4000-8000-000000000011', 'Launch Preparation', 13),
+('a0000000-0000-4000-8000-000000000011', 'Community & Project Documentation', 14),
+('a0000000-0000-4000-8000-000000000011', 'Token Project Website', 15),
+('a0000000-0000-4000-8000-000000000011', 'Launch Workflow', 16),
+('a0000000-0000-4000-8000-000000000011', 'Post-Launch Fundamentals', 17)
 on conflict (course_category_id, title) do update set sort_order = excluded.sort_order;
 
+delete from public.course_subcategories
+where course_category_id = 'a0000000-0000-4000-8000-000000000010'
+  and title in (
+    'Video Editing Foundations', 'Short-Form Content', 'Storytelling for Clients',
+    'Sound and Pacing', 'Export and Delivery', 'Portfolio Edit'
+  );
+
+delete from public.course_subcategories
+where course_category_id = 'a0000000-0000-4000-8000-000000000011'
+  and title in (
+    'Professional Communication', 'Inbox and Calendar Systems', 'Research for Clients',
+    'Documentation and SOPs', 'Tools for Remote Teams', 'Working with International Clients',
+    'Building a VA Service Offer'
+  );
+
+update public.course_subcategories
+set summary = 'Practice ' || title || ' as part of this 30-day program.'
+where summary is null or btrim(summary) = '';
+
 insert into public.journey_steps (id, step_number, phase, title, description, sort_order) values
-('b0000000-0000-4000-8000-000000000001', 1, 'Before day 1', 'Choose your skill', 'Pick a 30-day program aligned with the work you want to do. Review the curriculum, fee, and format, then submit your enrollment.', 1),
-('b0000000-0000-4000-8000-000000000002', 2, 'Days 1–7', 'Learn the foundations', 'Work through the core lessons with a clear weekly target. Mentors help you understand the skill before you rush into tools.', 2),
-('b0000000-0000-4000-8000-000000000003', 3, 'Days 8–16', 'Practice with feedback', 'Complete guided exercises, attend workshop sessions, and get critique from mentors and your cohort.', 3),
-('b0000000-0000-4000-8000-000000000004', 4, 'Days 17–24', 'Build a real project', 'Apply the skill to a portfolio piece a client or employer can understand. This is project-based learning, not a pile of theory.', 4),
-('b0000000-0000-4000-8000-000000000005', 5, 'Days 25–28', 'Earn your certification', 'Complete the program requirements and assessment. Your certificate records the skill you trained, not a promise of income.', 5),
-('b0000000-0000-4000-8000-000000000006', 6, 'Days 29–30', 'Prepare for real opportunities', 'Get freelancing support, learn how to present your work, and receive guidance for working with clients, including international clients.', 6)
+('b0000000-0000-4000-8000-000000000001', 1, '01', 'Choose a Skill', 'Explore the academy''s professional programs.', 1),
+('b0000000-0000-4000-8000-000000000002', 2, '02', 'Enroll', 'Choose your program and learning format.', 2),
+('b0000000-0000-4000-8000-000000000003', 3, '03', 'Learn for 30 Days', 'Follow a structured training experience.', 3),
+('b0000000-0000-4000-8000-000000000004', 4, '04', 'Build Projects', 'Turn knowledge into practical work.', 4),
+('b0000000-0000-4000-8000-000000000005', 5, '05', 'Get Certified', 'Complete the requirements for certification.', 5),
+('b0000000-0000-4000-8000-000000000006', 6, '06', 'Receive Mentorship', 'Continue receiving professional guidance.', 6),
+('b0000000-0000-4000-8000-000000000007', 7, '07', 'Explore Opportunities', 'Develop your skills for freelancing, professional work, entrepreneurship, and other opportunities. Income, clients, and employment are not guaranteed.', 7)
 on conflict (id) do update set
   step_number = excluded.step_number,
   phase = excluded.phase,
@@ -236,14 +284,14 @@ on conflict (id) do update set
   sort_order = excluded.sort_order;
 
 insert into public.faqs (id, question, answer, topic, sort_order, is_published) values
-('c0000000-0000-4000-8000-000000000001', 'How long is each program?', 'Each main program is a structured 30-day skills program. You move from foundations to practice, a real project, and certification requirements.', 'Programs', 1, true),
-('c0000000-0000-4000-8000-000000000002', 'Are programs online or offline?', 'Training is offered online and offline. The format for each program is shown on its page and can include live sessions, practical work, and campus or studio time when a cohort is in person.', 'Programs', 2, true),
-('c0000000-0000-4000-8000-000000000003', 'Do I receive a certificate?', 'Yes. Students who complete the program requirements and assessment receive a VibeX Skills Academy certificate for that program. The certificate validates your training. It is not a guarantee of employment or income.', 'Certification', 3, true),
-('c0000000-0000-4000-8000-000000000004', 'Is mentorship included?', 'Yes. Mentorship sits alongside lessons. You get guidance on your work, your project, and the next step after the 30 days.', 'Support', 4, true),
-('c0000000-0000-4000-8000-000000000005', 'What does freelancing support include?', 'You learn how to package your skill, present a project, communicate with clients, and look for opportunities. Support includes guidance for working with international clients. The academy does not promise clients or earnings.', 'Support', 5, true),
-('c0000000-0000-4000-8000-000000000006', 'Does the Forex program promise profits?', 'No. Forex training at VibeX is educational. Trading involves financial risk, including the possible loss of money. You will study risk management and practice on a demo account. Nothing in the program is a guarantee of profit.', 'Programs', 6, true),
-('c0000000-0000-4000-8000-000000000007', 'How do I enroll?', 'Create an account, choose a program, and submit your enrollment. The academy confirms your place and payment status. You can track the status from your student dashboard.', 'Enrollment', 7, true),
-('c0000000-0000-4000-8000-000000000008', 'Can I track my learning after I enroll?', 'Yes. Once you are enrolled, your dashboard includes the program curriculum so you can mark modules complete as you work through the 30 days.', 'Learning', 8, true)
+('c0000000-0000-4000-8000-000000000001', 'What is VibeX Skills Academy?', 'VibeX Skills Academy is a professional skills academy. Learners acquire practical skills, build projects, and continue developing after the core training period.', 'General', 1, true),
+('c0000000-0000-4000-8000-000000000002', 'How long are the programs?', 'All core courses are structured as 30-day programs.', 'Programs', 2, true),
+('c0000000-0000-4000-8000-000000000003', 'Are courses online or offline?', 'Programs can be offered online and offline.', 'Programs', 3, true),
+('c0000000-0000-4000-8000-000000000004', 'How do I enroll?', 'Choose a program, make payment using the provided bank details, and submit your enrollment and payment information. The academy reviews the payment before admission.', 'Enrollment', 4, true),
+('c0000000-0000-4000-8000-000000000005', 'How much does training cost?', 'Program fees range from ₦100,000 to ₦200,000 depending on the program. One fee covers every subcategory in that program.', 'Enrollment', 5, true),
+('c0000000-0000-4000-8000-000000000006', 'Do I receive a certificate?', 'Eligible learners can receive certification after completing the required program requirements.', 'Certification', 6, true),
+('c0000000-0000-4000-8000-000000000007', 'Can I continue with the academy after 30 days?', 'Yes. The academy provides opportunities for continued learning, mentorship, community engagement, and other professional support.', 'Support', 7, true),
+('c0000000-0000-4000-8000-000000000008', 'Does VibeX guarantee freelancing income?', 'No. The academy provides training and guidance but does not guarantee income, clients, employment, or financial results.', 'Support', 8, true)
 on conflict (id) do update set
   question = excluded.question,
   answer = excluded.answer,
@@ -251,54 +299,20 @@ on conflict (id) do update set
   sort_order = excluded.sort_order,
   is_published = excluded.is_published;
 
-insert into public.testimonials (id, name, role, program_label, quote, rating, is_published, sort_order) values
-('d0000000-0000-4000-8000-000000000001', 'Amaka O.', 'Sample student', 'Digital Marketing', 'The 30 days gave me a campaign I could actually explain. I was not collecting random tips. I was building something I could show.', 5, true, 1),
-('d0000000-0000-4000-8000-000000000002', 'Daniel K.', 'Sample student', 'VIBE CODING', 'I shipped a small web app and learned how to talk about it with a client. The project mattered more than the number of lessons.', 5, true, 2),
-('d0000000-0000-4000-8000-000000000003', 'Sarah M.', 'Sample student', 'Writing & Publishing', 'Mentorship kept the manuscript moving. I finished a sample chapter and a formatted file instead of another unfinished draft.', 5, true, 3),
-('d0000000-0000-4000-8000-000000000004', 'Ibrahim T.', 'Sample student', 'UI/UX Design', 'I left with a case study, not just screenshots. The feedback on my prototype was specific and useful.', 5, true, 4)
-on conflict (id) do update set
-  name = excluded.name,
-  role = excluded.role,
-  program_label = excluded.program_label,
-  quote = excluded.quote,
-  rating = excluded.rating,
-  is_published = excluded.is_published,
-  sort_order = excluded.sort_order;
-
-insert into public.workshops (id, slug, title, summary, description, starts_at, mode, location, price_ngn, seats, is_published) values
-('e0000000-0000-4000-8000-000000000001', 'portfolio-critique-lab', 'Portfolio Critique Lab', 'Bring a project and leave with clear next edits.', 'A practical studio session for students preparing portfolio pieces. Mentors review structure, presentation, and what a client would ask next.', '2026-11-07 10:00:00+01', 'Hybrid', 'Campus studio and online', 15000, 24, true),
-('e0000000-0000-4000-8000-000000000002', 'international-clients', 'Working with International Clients', 'Learn how to communicate, scope, and deliver work across borders.', 'A workshop on proposals, time zones, professional communication, and presenting your skill to clients outside your city. No client placements are promised.', '2026-11-14 15:00:00+01', 'Online', 'Live online session', 20000, 40, true),
-('e0000000-0000-4000-8000-000000000003', 'trading-risk-education', 'Trading Risk Education', 'A plain-language session on risk, journals, and demo practice.', 'This session reinforces that trading can lead to financial loss. It covers position risk, journaling, and why a demo account comes before live capital.', '2026-11-21 11:00:00+01', 'Hybrid', 'Campus classroom and online', 0, 50, true),
-('e0000000-0000-4000-8000-000000000004', 'vibe-coding-build-night', 'Vibe Coding Build Night', 'Build a small web feature with mentors in the room.', 'A focused build session for students in VIBE CODING and anyone curious about shipping a page, a form, or a dashboard feature.', '2026-11-28 16:00:00+01', 'Offline', 'Campus lab', 25000, 20, true)
-on conflict (slug) do update set
-  title = excluded.title,
-  summary = excluded.summary,
-  description = excluded.description,
-  starts_at = excluded.starts_at,
-  mode = excluded.mode,
-  location = excluded.location,
-  price_ngn = excluded.price_ngn,
-  seats = excluded.seats,
-  is_published = excluded.is_published;
-
-insert into public.mentors (id, name, title, focus, bio, is_published, sort_order) values
-('f0000000-0000-4000-8000-000000000001', 'Chioma Adeyemi', 'Lead mentor, design and marketing', 'Digital Marketing, Creative & Visual, UI/UX', 'Chioma reviews campaign plans, brand visuals, and interface case studies. Sample profile for setup. Replace with your real mentor before launch.', true, 1),
-('f0000000-0000-4000-8000-000000000002', 'Michael Okonkwo', 'Lead mentor, VIBE CODING', 'Web design, Supabase, deployment', 'Michael helps students ship and explain a working project. Sample profile for setup. Replace with your real mentor before launch.', true, 2),
-('f0000000-0000-4000-8000-000000000003', 'Ruth Bassey', 'Lead mentor, writing', 'Publishing, creative writing, research', 'Ruth coaches structure, voice, and research notes for long-form work. Sample profile for setup. Replace with your real mentor before launch.', true, 3),
-('f0000000-0000-4000-8000-000000000004', 'Samuel Nwosu', 'Career mentor', 'Freelancing and international clients', 'Samuel runs sessions on offers, communication, and professional delivery. He does not promise clients or income. Sample profile for setup.', true, 4)
-on conflict (id) do update set
-  name = excluded.name,
-  title = excluded.title,
-  focus = excluded.focus,
-  bio = excluded.bio,
-  is_published = excluded.is_published,
-  sort_order = excluded.sort_order;
+delete from public.testimonials where role = 'Sample student';
+delete from public.mentors where bio ilike '%Sample profile%';
+delete from public.workshops where slug in (
+  'portfolio-critique-lab', 'international-clients', 'trading-risk-education', 'vibe-coding-build-night'
+);
 
 insert into public.community_posts (id, title, body, kind, author_name, is_published, sort_order) values
-('ab000000-0000-4000-8000-000000000001', 'Skill circles', 'Each cohort has a circle for questions, work reviews, and accountability. You are not studying alone for 30 days.', 'Circle', 'VibeX team', true, 1),
-('ab000000-0000-4000-8000-000000000002', 'Project showcases', 'Students present practical projects, from campaign samples and manuscripts to websites and design case studies.', 'Showcase', 'VibeX team', true, 2),
-('ab000000-0000-4000-8000-000000000003', 'Mentor office hours', 'Bring a stuck lesson, a draft, or a client-style brief. Office hours are for specific feedback.', 'Support', 'VibeX team', true, 3),
-('ab000000-0000-4000-8000-000000000004', 'International client practice', 'Community sessions cover proposals, updates, and delivery habits for working with clients in other countries.', 'Career', 'VibeX team', true, 4)
+('ab000000-0000-4000-8000-000000000001', 'Student Community', 'Learners can stay connected, share progress, and receive academy information.', 'Community', null, true, 1),
+('ab000000-0000-4000-8000-000000000002', 'Team Groups', 'Team groups are published here when the academy adds a WhatsApp, Telegram, Discord, or other link.', 'Community', null, true, 2),
+('ab000000-0000-4000-8000-000000000003', 'Announcements', 'Program updates and academy notices appear in the student dashboard when an administrator publishes them.', 'Announcements', null, true, 3),
+('ab000000-0000-4000-8000-000000000004', 'Learning Discussions', 'Use the community space to discuss lessons and projects. Links are added by the academy.', 'Discussions', null, true, 4),
+('ab000000-0000-4000-8000-000000000005', 'Opportunities', 'The academy may share practice opportunities. Nothing here is a promise of clients, employment, or income.', 'Opportunities', null, true, 5),
+('ab000000-0000-4000-8000-000000000006', 'Workshops', 'Shorter sessions are listed on the workshops page when the academy publishes them.', 'Workshops', null, true, 6),
+('ab000000-0000-4000-8000-000000000007', 'Mentorship', 'Mentorship continues after the 30 days when a mentorship program is published by the academy.', 'Mentorship', null, true, 7)
 on conflict (id) do update set
   title = excluded.title,
   body = excluded.body,
@@ -306,3 +320,40 @@ on conflict (id) do update set
   author_name = excluded.author_name,
   is_published = excluded.is_published,
   sort_order = excluded.sort_order;
+
+update public.course_categories
+set audience = array[
+  'Beginners', 'Students', 'Career changers', 'Freelancers', 'Entrepreneurs',
+  'Creatives', 'Professionals', 'People looking to develop new digital skills'
+],
+requirements = array[
+  'A smartphone or computer',
+  'Internet access for online learning',
+  'Willingness to practice',
+  'Commitment to the 30-day program'
+]
+where cardinality(audience) = 0;
+
+insert into public.course_roadmaps (course_category_id, week_number, title, description, sort_order)
+select c.id, w.week_number, w.title, w.description, w.week_number
+from public.course_categories c
+cross join (
+  values
+    (1, 'Foundation', 'Understand the fundamentals.'),
+    (2, 'Skill Development', 'Learn practical techniques and professional workflows.'),
+    (3, 'Project Building', 'Apply the skills to real-world projects.'),
+    (4, 'Professional Practice', 'Complete projects, receive guidance, and prepare for real opportunities.')
+) as w(week_number, title, description)
+on conflict (course_category_id, week_number) do update set
+  title = excluded.title,
+  description = excluded.description,
+  sort_order = excluded.sort_order;
+
+insert into public.site_settings (key, value) values
+('contact_email', 'DRADURNEYFRA@GMAIL.COM'),
+('whatsapp_display', '07059991266'),
+('whatsapp_link', 'https://wa.me/2347059991266'),
+('bank_name', 'OPay'),
+('account_name', 'Adigun Muideen'),
+('account_number', '7059991266')
+on conflict (key) do update set value = excluded.value, updated_at = now();

@@ -45,9 +45,34 @@ export interface Category {
   format_label: string
   risk_notice: string | null
   outcomes: string[]
+  audience: string[]
+  requirements: string[]
+  cover_url: string | null
   is_published: boolean
   created_at: string
   modules?: ProgramModule[]
+  roadmaps?: CourseRoadmap[]
+  projects?: CourseProject[]
+}
+
+export interface CourseRoadmap {
+  id: string
+  course_category_id: string
+  week_number: number
+  title: string
+  description: string
+  sort_order: number
+}
+
+export interface CourseProject {
+  id: string
+  course_category_id: string
+  title: string
+  description: string
+  difficulty: string | null
+  skills: string | null
+  outcome: string | null
+  sort_order: number
 }
 
 export interface Workshop {
@@ -62,6 +87,8 @@ export interface Workshop {
   price_ngn: number
   seats: number | null
   cover_url: string | null
+  instructor: string | null
+  registration_status: string
   is_published: boolean
   created_at: string
 }
@@ -168,6 +195,80 @@ export interface Enrollment {
   course_categories?: Pick<Category, 'id' | 'slug' | 'name' | 'code' | 'price' | 'duration_days' | 'icon'> | null
   payments?: Payment[]
   profiles?: Pick<Profile, 'full_name' | 'email' | 'phone'> | null
+}
+
+export interface Certificate {
+  id: string
+  enrollment_id: string | null
+  student_id: string
+  certificate_number: string
+  student_name: string
+  program_name: string
+  issued_on: string
+  status: 'valid' | 'revoked'
+  file_url: string | null
+  created_at: string
+}
+
+export interface ProfessionalProgram {
+  id: string
+  slug: string
+  title: string
+  description: string
+  duration_label: string | null
+  price: number | string | null
+  requirements: string | null
+  application_process: string | null
+  status: string
+  starts_on: string | null
+  ends_on: string | null
+  is_published: boolean
+  sort_order: number
+}
+
+export interface MentorshipProgram {
+  id: string
+  title: string
+  description: string
+  availability: string | null
+  application_status: string
+  is_published: boolean
+  sort_order: number
+}
+
+export interface CommunityLink {
+  id: string
+  platform: string
+  label: string
+  url: string
+  is_published: boolean
+  sort_order: number
+}
+
+export interface SocialLink {
+  id: string
+  platform: string
+  url: string
+  is_published: boolean
+  sort_order: number
+}
+
+export interface Announcement {
+  id: string
+  title: string
+  body: string
+  is_published: boolean
+  created_at: string
+}
+
+export interface LearningResource {
+  id: string
+  course_category_id: string | null
+  title: string
+  description: string | null
+  link_url: string | null
+  is_published: boolean
+  sort_order: number
 }
 
 export interface ContactMessage {

@@ -4,16 +4,24 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { DataState } from '@/components/ui/States'
 import { useQuery } from '@/hooks/useQuery'
 import { fetchFaqs } from '@/lib/api'
+import { fallbackFaqs } from '@/lib/catalog'
 
 export function FaqPage() {
   const query = useQuery(() => fetchFaqs(), 'faqs')
   const [open, setOpen] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const source = query.data?.length ? query.data : query.error ? fallbackFaqs : []
   const topics = useMemo(() => {
-    const names = new Set((query.data ?? []).map((faq) => faq.topic))
+    const names = new Set(source.map((faq) => faq.topic))
     return ['All', ...names]
-  }, [query.data])
+  }, [source])
   const [topic, setTopic] = useState('All')
-  const visible = (query.data ?? []).filter((faq) => topic === 'All' || faq.topic === topic)
+  const visible = source.filter((faq) => {
+    const matchesTopic = topic === 'All' || faq.topic === topic
+    const term = search.trim().toLowerCase()
+    const matchesSearch = !term || `${faq.question} ${faq.answer}`.toLowerCase().includes(term)
+    return matchesTopic && matchesSearch
+  })
 
   return (
     <>
@@ -27,7 +35,8 @@ export function FaqPage() {
         text="Program length, certificates, mentorship, freelancing support, and risk education are explained here. The academy updates these answers from the database."
       />
       <section className="mx-auto max-w-3xl px-5 py-14 sm:px-8">
-        <DataState loading={query.loading} error={query.error} empty={!query.data?.length}>
+        <DataState loading={query.loading} error={query.error && source.length === 0 ? query.error : null} empty={!query.loading && source.length === 0}>
+          <input className="field mb-4" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search questions" />
           <div className="mb-6 flex flex-wrap gap-2">
             {topics.map((item) => (
               <button

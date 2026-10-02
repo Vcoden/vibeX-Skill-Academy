@@ -5,8 +5,10 @@ import { Field } from '@/components/ui/Field'
 import { DataState } from '@/components/ui/States'
 import { useAuth } from '@/context/AuthContext'
 import { useQuery } from '@/hooks/useQuery'
-import { createEnrollment, fetchCategory, fetchMyEnrollment, savePaymentReceipt, submitPayment } from '@/lib/api'
+import { createEnrollment, fetchCategories, fetchCategory, fetchMyEnrollment, savePaymentReceipt, submitPayment } from '@/lib/api'
 import { collectionAccount } from '@/lib/bank'
+import { fetchAcademySettings } from '@/lib/settings'
+import { fallbackCategories } from '@/lib/catalog'
 import { enrollmentStatusLabel, errorMessage, formatNaira } from '@/lib/format'
 import type { LearningFormat } from '@/types/database'
 
@@ -14,8 +16,17 @@ const closedStatuses = new Set(['cancelled', 'rejected', 'completed'])
 
 export function EnrollPage() {
   const { slug = '' } = useParams()
-  const { user } = useAuth()
-  const programQuery = useQuery(() => fetchCategory(slug), slug)
+  const { user, profile, updateProfile } = useAuth()
+  const catalog = useQuery(() => fetchCategories(), 'enroll-programs')
+  const settingsQuery = useQuery(() => fetchAcademySettings(), 'enroll-settings')
+  const bankDetails = settingsQuery.data
+    ? {
+        bankName: settingsQuery.data.bankName,
+        accountName: settingsQuery.data.accountName,
+        accountNumber: settingsQuery.data.accountNumber,
+      }
+    : collectionAccount
+  const programQuery = useQuery(() => (slug ? fetchCategory(slug) : Promise.resolve(null)), slug || 'choose')
   const enrollmentQuery = useQuery(
     () => (user && programQuery.data ? fetchMyEnrollment(user.id, programQuery.data.id) : Promise.resolve(null)),
     `${user?.id ?? 'guest'}-${programQuery.data?.id ?? slug}`,
@@ -27,14 +38,24 @@ export function EnrollPage() {
   const [paidOn, setPaidOn] = useState('')
   const [amount, setAmount] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [fullName, setFullName] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const program = programQuery.data
+  const programChoices = catalog.data?.length ? catalog.data : catalog.error ? fallbackCategories : []
+  const program = programQuery.data ?? (slug && programQuery.error ? fallbackCategories.find((item) => item.slug === slug) ?? null : null)
+  const liveProgram = Boolean(program && /^[0-9a-f-]{36}$/i.test(program.id))
   const enrollment = enrollmentQuery.data
   const openEnrollment = enrollment && !closedStatuses.has(enrollment.status) ? enrollment : null
 
+  const nameValue = fullName || profile?.full_name || ''
+  const phoneValue = whatsapp || profile?.phone || ''
+
   async function startEnrollment() {
-    if (!program) return
+    if (!program || !liveProgram) {
+      setFormError('This program can be enrolled once the academy database is connected.')
+      return
+    }
     if (!agreed) {
       setFormError('Confirm that you understand this is a training program.')
       return
@@ -57,7 +78,11 @@ export function EnrollPage() {
   }
 
   async function sendPayment() {
-    if (!user || !openEnrollment) return
+    if (!user || !openEnrollment || !liveProgram) return
+    if (nameValue.trim().length < 2 || phoneValue.trim().length < 7) {
+      setFormError('Enter your full name and WhatsApp number.')
+      return
+    }
     if (!file) {
       setFormError('Upload the payment receipt.')
       return
@@ -74,13 +99,14 @@ export function EnrollPage() {
     setBusy(true)
     setFormError(null)
     try {
+      await updateProfile({ full_name: nameValue.trim(), phone: phoneValue.trim() })
       const paymentId = await submitPayment({
         enrollmentId: openEnrollment.id,
         amount: paid,
         studentBankReference: reference.trim(),
         transactionDate: paidOn,
-        bankName: collectionAccount.bankName,
-        accountName: collectionAccount.accountName,
+        bankName: bankDetails.bankName,
+        accountName: bankDetails.accountName,
       })
       await savePaymentReceipt({ paymentId, studentId: user.id, file })
       await enrollmentQuery.reload()
@@ -92,23 +118,42 @@ export function EnrollPage() {
   }
 
   async function copyAccount() {
-    await navigator.clipboard.writeText(collectionAccount.accountNumber)
+    await navigator.clipboard.writeText(bankDetails.accountNumber)
   }
 
   return (
     <>
       <Seo title="Enroll | VibeX Skills Academy" description="Start an enrollment, then submit your bank transfer and receipt." />
       <section className="mx-auto max-w-3xl px-5 py-14 sm:px-8">
+        {!slug ? (
+          <div>
+            <h1 className="font-display text-4xl">Choose Your Program</h1>
+            <p className="mt-3 text-muted">Step 1 of 4. Select a program, then choose online or offline and submit your transfer.</p>
+            <div className="mt-8 grid gap-3">
+              {programChoices.map((item) => (
+                <Link key={item.slug} to={`/enroll/${item.slug}`} className="rounded-2xl border border-line bg-white px-4 py-4 font-semibold">
+                  {item.code} · {item.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <DataState
-          loading={programQuery.loading || enrollmentQuery.loading}
-          error={programQuery.error}
-          empty={!programQuery.loading && !program}
+          loading={Boolean(slug) && (programQuery.loading || enrollmentQuery.loading)}
+          error={slug && programQuery.error && !program ? programQuery.error : null}
+          empty={Boolean(slug) && !programQuery.loading && !program}
           count={1}
         >
           {program ? (
             <>
               <p className="text-xs font-semibold tracking-[0.18em] text-blue uppercase">{program.code}</p>
               <h1 className="mt-2 font-display text-4xl">Enroll in {program.name}</h1>
+              <ol className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                <li className="rounded-full bg-mist px-3 py-1">1 Choose program</li>
+                <li className="rounded-full bg-mist px-3 py-1">2 Online or offline</li>
+                <li className="rounded-full bg-mist px-3 py-1">3 Bank transfer</li>
+                <li className="rounded-full bg-mist px-3 py-1">4 Submit enrollment</li>
+              </ol>
               <p className="mt-3 text-muted">
                 Current fee {formatNaira(program.price)}. This amount is locked onto your enrollment and does not change if the program price changes later.
               </p>
@@ -126,16 +171,25 @@ export function EnrollPage() {
                   {openEnrollment.status === 'pending_payment' ? (
                     <>
                       <div className="rounded-2xl bg-mist p-4 text-sm">
-                        <p className="font-semibold">Bank: {collectionAccount.bankName}</p>
-                        <p>Account name: {collectionAccount.accountName}</p>
-                        <p>Account number: {collectionAccount.accountNumber}</p>
+                        <p className="font-semibold">Bank: {bankDetails.bankName}</p>
+                        <p>Account name: {bankDetails.accountName}</p>
+                        <p>Account number: {bankDetails.accountNumber}</p>
                         <button type="button" onClick={copyAccount} className="mt-3 font-semibold text-blue">
                           Copy account number
                         </button>
                         <p className="mt-3 text-muted">
-                          Transfer the amount due, then submit the bank reference and receipt. A verified payment does not by itself admit you. The academy confirms admission separately.
+                          Complete your bank transfer using the details above, then submit your payment information below.
                         </p>
                       </div>
+                      <Field label="Full name">
+                        <input className="field" value={fullName || profile?.full_name || ''} onChange={(event) => setFullName(event.target.value)} />
+                      </Field>
+                      <Field label="Email">
+                        <input className="field" value={profile?.email || user?.email || ''} readOnly />
+                      </Field>
+                      <Field label="WhatsApp number">
+                        <input className="field" value={whatsapp || profile?.phone || ''} onChange={(event) => setWhatsapp(event.target.value)} />
+                      </Field>
                       <Field label="Amount transferred">
                         <input className="field" inputMode="decimal" value={amount || String(openEnrollment.amount_due)} onChange={(event) => setAmount(event.target.value)} />
                       </Field>
@@ -149,12 +203,12 @@ export function EnrollPage() {
                         <input className="field" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
                       </Field>
                       <button type="button" disabled={busy} onClick={sendPayment} className="rounded-full bg-navy px-5 py-3 text-sm font-semibold text-white disabled:opacity-60">
-                        {busy ? 'Submitting…' : 'Submit payment'}
+                        {busy ? 'Submitting…' : 'Submit Enrollment'}
                       </button>
                     </>
                   ) : (
                     <p className="text-sm leading-relaxed text-muted">
-                      {openEnrollment.status === 'payment_submitted' && 'Your receipt is with the academy. Payment verification does not yet mean you are enrolled.'}
+                      {openEnrollment.status === 'payment_submitted' && 'Your enrollment has been received. Our team will review your payment and contact you with your next steps.'}
                       {openEnrollment.status === 'payment_verified' && 'The payment is verified. Admission is confirmed separately.'}
                       {openEnrollment.status === 'enrolled' && 'You are enrolled. Training has not been marked active yet.'}
                       {openEnrollment.status === 'active' && 'Your training is active.'}

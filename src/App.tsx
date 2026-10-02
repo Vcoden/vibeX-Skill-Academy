@@ -16,6 +16,11 @@ import { CoursesPage } from '@/pages/CoursesPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { EnrollPage } from '@/pages/EnrollPage'
 import { FaqPage } from '@/pages/FaqPage'
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
+import { MentorshipPage } from '@/pages/MentorshipPage'
+import { ProfessionalProgramsPage } from '@/pages/ProfessionalProgramsPage'
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
+import { VerifyCertificatePage } from '@/pages/VerifyCertificatePage'
 import { HomePage } from '@/pages/HomePage'
 import { JourneyPage } from '@/pages/JourneyPage'
 import { LearnPage } from '@/pages/LearnPage'
@@ -39,8 +44,14 @@ export default function App() {
             <Route path="workshops" element={<WorkshopsPage />} />
             <Route path="faq" element={<FaqPage />} />
             <Route path="contact" element={<ContactPage />} />
+            <Route path="programs" element={<ProfessionalProgramsPage />} />
+            <Route path="mentorship" element={<MentorshipPage />} />
+            <Route path="verify-certificate" element={<VerifyCertificatePage />} />
             <Route path="login" element={<LoginPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route path="register" element={<RegisterPage />} />
+            <Route path="enroll" element={<RequireAuth><EnrollPage /></RequireAuth>} />
             <Route path="enroll/:slug" element={<RequireAuth><EnrollPage /></RequireAuth>} />
             <Route path="dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
             <Route path="learn/:slug" element={<RequireAuth><LearnPage /></RequireAuth>} />

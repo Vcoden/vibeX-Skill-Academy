@@ -51,9 +51,11 @@ Sign out and back in, then open `/admin`.
 
 ## Before a public launch
 
-Replace the sample testimonials, mentor profiles, and community notes with real people. Categories 10 and 11, and the final UI/UX module, are starter records you can edit or replace in admin. The original brief was cut off during UI/UX Design.
+Testimonials, mentors, workshops, and community links stay empty until you add real records in admin. Do not publish invented student stories or mentor names.
 
-Forex training includes a risk notice. Do not add profit guarantees.
+Forex, Shopify, and token programs include risk notices. Do not add profit, sales, or token-value guarantees.
+
+Replace `http://localhost:5173` in `public/sitemap.xml` with the public site address before launch.
 
 ## Brand files
 

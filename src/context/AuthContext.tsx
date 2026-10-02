@@ -11,6 +11,8 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (input: { fullName: string; email: string; password: string }) => Promise<{ needsConfirmation: boolean }>
   signOut: () => Promise<void>
+  requestPasswordReset: (email: string) => Promise<void>
+  updatePassword: (password: string) => Promise<void>
   updateProfile: (patch: Partial<Pick<Profile, 'full_name' | 'phone' | 'bio' | 'avatar_url'>>) => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -93,6 +95,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signOut() {
         const db = requireSupabase()
         const { error } = await db.auth.signOut()
+        if (error) throw error
+      },
+      async requestPasswordReset(email) {
+        const db = requireSupabase()
+        const { error } = await db.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        })
+        if (error) throw error
+      },
+      async updatePassword(password) {
+        const db = requireSupabase()
+        const { error } = await db.auth.updateUser({ password })
         if (error) throw error
       },
       async updateProfile(patch) {

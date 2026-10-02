@@ -24,15 +24,17 @@ export function ProgramCard({ program }: { program: Category }) {
           <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">Risk education included</span>
         ) : null}
       </div>
-      <div className="mt-6 flex items-center justify-between gap-3">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="font-display text-xl text-ink">{formatNaira(program.price)}</p>
-        <Link
-          to={`/courses/${program.slug}`}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-blue"
-        >
-          View Program
-          <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to={`/courses/${program.slug}`} className="inline-flex items-center gap-1 text-sm font-semibold text-blue">
+            View Program
+            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+          </Link>
+          <Link to={`/enroll/${program.slug}`} className="rounded-full bg-navy px-3 py-2 text-sm font-semibold text-white">
+            Enroll Now
+          </Link>
+        </div>
       </div>
     </article>
   )

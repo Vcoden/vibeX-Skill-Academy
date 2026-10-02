@@ -24,12 +24,16 @@ export function DataState({
   loading,
   error,
   empty,
+  emptyTitle = 'Nothing published yet',
+  emptyBody = 'This section loads from Supabase. Add or publish records in the admin dashboard and they will show up here.',
   children,
   count = 3,
 }: {
   loading: boolean
   error: string | null
   empty?: boolean
+  emptyTitle?: string
+  emptyBody?: string
   children: ReactNode
   count?: number
 }) {
@@ -45,8 +49,8 @@ export function DataState({
   if (empty) {
     return (
       <EmptyState
-        title="Nothing published yet"
-        body="This section loads from Supabase. Add or publish records in the admin dashboard and they will show up here."
+        title={emptyTitle}
+        body={emptyBody}
       />
     )
   }

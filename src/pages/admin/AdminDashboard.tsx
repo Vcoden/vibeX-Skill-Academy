@@ -6,10 +6,13 @@ import { fetchAdminStats } from '@/lib/api'
 export function AdminDashboard() {
   const stats = useQuery(() => fetchAdminStats(), 'admin-stats')
   const cards = [
-    { label: 'Programs', value: stats.data?.programs ?? 0, to: '/admin/programs' },
-    { label: 'Workshops', value: stats.data?.workshops ?? 0, to: '/admin/records/workshops' },
-    { label: 'Enrollments', value: stats.data?.enrollments ?? 0, to: '/admin/enrollments' },
-    { label: 'Unread messages', value: stats.data?.unread ?? 0, to: '/admin/messages' },
+    { label: 'Students', value: stats.data?.students ?? 0, to: '/admin/records/students' },
+    { label: 'Pending enrollments', value: stats.data?.pending ?? 0, to: '/admin/enrollments' },
+    { label: 'Verified payments', value: stats.data?.verifiedPayments ?? 0, to: '/admin/enrollments' },
+    { label: 'Active programs', value: stats.data?.programs ?? 0, to: '/admin/programs' },
+    { label: 'Upcoming workshops', value: stats.data?.workshops ?? 0, to: '/admin/records/workshops' },
+    { label: 'Certificates', value: stats.data?.certificates ?? 0, to: '/admin/records/certificates' },
+    { label: 'New inquiries', value: stats.data?.unread ?? 0, to: '/admin/messages' },
   ]
 
   return (

@@ -7,7 +7,7 @@ import { Field } from '@/components/ui/Field'
 import { DataState } from '@/components/ui/States'
 import { useAuth } from '@/context/AuthContext'
 import { useQuery } from '@/hooks/useQuery'
-import { fetchMyEnrollments, uploadMedia } from '@/lib/api'
+import { fetchAnnouncements, fetchCommunityLinks, fetchMentorshipPrograms, fetchMyCertificates, fetchMyEnrollments, fetchMyResources, uploadMedia } from '@/lib/api'
 import { enrollmentStatusLabel, errorMessage, formatNaira, initials } from '@/lib/format'
 import { profileSchema } from '@/lib/validators'
 
@@ -16,6 +16,11 @@ type FormValues = { fullName: string; phone: string; bio: string }
 export function DashboardPage() {
   const { profile, user, signOut, updateProfile } = useAuth()
   const enrollments = useQuery(() => fetchMyEnrollments(user?.id ?? ''), user?.id ?? 'none')
+  const certificates = useQuery(() => fetchMyCertificates(user?.id ?? ''), `certs-${user?.id ?? 'none'}`)
+  const announcements = useQuery(() => fetchAnnouncements(), 'announcements')
+  const resources = useQuery(() => fetchMyResources(), 'resources')
+  const mentorship = useQuery(() => fetchMentorshipPrograms(), 'dash-mentorship')
+  const community = useQuery(() => fetchCommunityLinks(), 'dash-community')
   const [message, setMessage] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const form = useForm<FormValues>({
@@ -135,6 +140,51 @@ export function DashboardPage() {
               Save profile
             </button>
           </form>
+        </div>
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
+          <article className="rounded-[1.4rem] border border-line bg-white p-5">
+            <h2 className="font-display text-2xl">Learning journey</h2>
+            <ol className="mt-3 space-y-2 text-sm text-muted">
+              <li>Week 1 — Foundation</li>
+              <li>Week 2 — Skill Development</li>
+              <li>Week 3 — Project Building</li>
+              <li>Week 4 — Professional Practice</li>
+            </ol>
+          </article>
+          <article className="rounded-[1.4rem] border border-line bg-white p-5">
+            <h2 className="font-display text-2xl">Certificate</h2>
+            {certificates.data?.length ? certificates.data.map((certificate) => (
+              <p key={certificate.id} className="mt-3 text-sm">
+                {certificate.program_name} · {certificate.certificate_number} · {certificate.status}
+              </p>
+            )) : <p className="mt-3 text-sm text-muted">No certificate has been issued yet.</p>}
+          </article>
+          <article className="rounded-[1.4rem] border border-line bg-white p-5">
+            <h2 className="font-display text-2xl">Announcements</h2>
+            {announcements.data?.length ? announcements.data.map((item) => (
+              <p key={item.id} className="mt-3 text-sm"><span className="font-semibold">{item.title}.</span> {item.body}</p>
+            )) : <p className="mt-3 text-sm text-muted">No announcements yet.</p>}
+          </article>
+          <article className="rounded-[1.4rem] border border-line bg-white p-5">
+            <h2 className="font-display text-2xl">Resources</h2>
+            {resources.data?.length ? resources.data.map((item) => (
+              <p key={item.id} className="mt-3 text-sm">
+                {item.link_url ? <a className="font-semibold text-blue" href={item.link_url}>{item.title}</a> : item.title}
+              </p>
+            )) : <p className="mt-3 text-sm text-muted">Learning materials appear here after you are enrolled.</p>}
+          </article>
+          <article className="rounded-[1.4rem] border border-line bg-white p-5">
+            <h2 className="font-display text-2xl">Mentorship</h2>
+            {mentorship.data?.length ? mentorship.data.map((item) => (
+              <p key={item.id} className="mt-3 text-sm"><span className="font-semibold">{item.title}.</span> {item.description}</p>
+            )) : <p className="mt-3 text-sm text-muted">Mentorship programs are published by the academy. None are listed yet.</p>}
+          </article>
+          <article className="rounded-[1.4rem] border border-line bg-white p-5">
+            <h2 className="font-display text-2xl">Community</h2>
+            {community.data?.length ? community.data.map((item) => (
+              <p key={item.id} className="mt-3 text-sm"><a className="font-semibold text-blue" href={item.url}>{item.label}</a></p>
+            )) : <p className="mt-3 text-sm text-muted">Community links appear when the academy adds them.</p>}
+          </article>
         </div>
       </section>
     </>

@@ -4,9 +4,11 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { DataState } from '@/components/ui/States'
 import { useQuery } from '@/hooks/useQuery'
 import { fetchJourney } from '@/lib/api'
+import { fallbackJourney } from '@/lib/catalog'
 
 export function JourneyPage() {
   const query = useQuery(() => fetchJourney(), 'journey')
+  const steps = query.data?.length ? query.data : query.error ? fallbackJourney : []
 
   return (
     <>
@@ -20,9 +22,9 @@ export function JourneyPage() {
         text="Each skill follows the same rhythm: learn the foundations, practice with feedback, build a real project, certify, and prepare for the next opportunity."
       />
       <section className="mx-auto max-w-4xl px-5 py-14 sm:px-8">
-        <DataState loading={query.loading} error={query.error} empty={!query.data?.length} count={2}>
+        <DataState loading={query.loading} error={query.error && steps.length === 0 ? query.error : null} empty={!query.loading && steps.length === 0} count={2}>
           <ol className="space-y-5">
-            {query.data?.map((step) => (
+            {steps.map((step) => (
               <li key={step.id} className="grid gap-4 rounded-[1.5rem] border border-line bg-white p-6 sm:grid-cols-[120px_1fr]">
                 <p className="font-display text-3xl text-blue">{String(step.step_number).padStart(2, '0')}</p>
                 <div>

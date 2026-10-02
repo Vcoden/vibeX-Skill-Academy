@@ -1,6 +1,5 @@
 import { Seo } from '@/components/Seo'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { DataState } from '@/components/ui/States'
 import { useQuery } from '@/hooks/useQuery'
 import { fetchMentors } from '@/lib/api'
 import { initials } from '@/lib/format'
@@ -16,8 +15,8 @@ export function AboutPage() {
       />
       <PageHeader
         eyebrow="About VXSA"
-        title="A skills academy for people building a working future."
-        text="VibeX Skills Academy teaches practical, income-relevant skills through structured 30-day programs. The work is professional, project-based, and supported by mentors and a cohort."
+        title="Building Skills for the Future."
+        text="VibeX Skills Academy helps people acquire practical skills, develop professional confidence, build projects, pursue opportunities, and continue growing beyond classroom training."
       />
       <section className="mx-auto grid max-w-7xl gap-8 px-5 py-14 sm:px-8 lg:grid-cols-2">
         <img
@@ -43,9 +42,9 @@ export function AboutPage() {
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <h2 className="font-display text-4xl">Mentors</h2>
-          <p className="mt-3 max-w-2xl text-muted">Mentor profiles are managed in the academy database.</p>
+          <p className="mt-3 max-w-2xl text-muted">Mentor profiles appear here when the academy publishes them.</p>
           <div className="mt-8">
-            <DataState loading={mentors.loading} error={mentors.error} empty={!mentors.data?.length}>
+            {mentors.data?.length ? (
               <div className="grid gap-5 md:grid-cols-2">
                 {mentors.data?.map((mentor) => (
                   <article key={mentor.id} className="rounded-[1.5rem] border border-line p-6">
@@ -63,7 +62,11 @@ export function AboutPage() {
                   </article>
                 ))}
               </div>
-            </DataState>
+            ) : mentors.loading ? (
+              <p className="text-sm text-muted">Loading mentor profiles.</p>
+            ) : (
+              <p className="text-sm text-muted">No mentor profiles are published yet.</p>
+            )}
           </div>
         </div>
       </section>

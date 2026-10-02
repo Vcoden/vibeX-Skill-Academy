@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { DataState } from '@/components/ui/States'
 import { useQuery } from '@/hooks/useQuery'
 import { fetchCategories, fetchFaqs, fetchJourney, fetchTestimonials, fetchWorkshops } from '@/lib/api'
+import { fallbackCategories, fallbackFaqs, fallbackJourney } from '@/lib/catalog'
 import { formatDate, formatNaira } from '@/lib/format'
 
 export function HomePage() {
@@ -17,6 +18,9 @@ export function HomePage() {
   const workshops = useQuery(() => fetchWorkshops(), 'home-workshops')
   const stories = useQuery(() => fetchTestimonials(), 'home-stories')
   const faqs = useQuery(() => fetchFaqs(), 'home-faqs')
+  const programList = programs.data?.length ? programs.data : programs.error ? fallbackCategories : []
+  const journeyList = journey.data?.length ? journey.data : journey.error ? fallbackJourney : []
+  const faqList = faqs.data?.length ? faqs.data : faqs.error ? fallbackFaqs : []
 
   return (
     <>
@@ -40,9 +44,9 @@ export function HomePage() {
           </div>
         </Reveal>
         <div className="mt-10">
-          <DataState loading={programs.loading} error={programs.error} empty={!programs.data?.length}>
+          <DataState loading={programs.loading} error={programs.error && programList.length === 0 ? programs.error : null} empty={!programs.loading && programList.length === 0}>
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {programs.data?.map((program, index) => (
+              {programList.map((program, index) => (
                 <Reveal key={program.id} delay={index * 40}>
                   <ProgramCard program={program} />
                 </Reveal>
@@ -64,9 +68,9 @@ export function HomePage() {
               See the full journey
             </Button>
           </div>
-          <DataState loading={journey.loading} error={journey.error} empty={!journey.data?.length} count={2}>
+          <DataState loading={journey.loading} error={journey.error && journeyList.length === 0 ? journey.error : null} empty={!journey.loading && journeyList.length === 0} count={2}>
             <ol className="grid gap-4 sm:grid-cols-2">
-              {journey.data?.slice(0, 4).map((step) => (
+              {journeyList.slice(0, 4).map((step) => (
                 <li key={step.id} className="rounded-[1.4rem] border border-line bg-mist p-5">
                   <p className="text-xs font-semibold tracking-[0.16em] text-blue uppercase">{step.phase}</p>
                   <h3 className="mt-2 font-display text-xl">{step.title}</h3>
@@ -105,7 +109,14 @@ export function HomePage() {
           </Link>
         </div>
         <div className="mt-8">
-          <DataState loading={workshops.loading} error={workshops.error} empty={!workshops.data?.length} count={2}>
+          <DataState
+            loading={workshops.loading}
+            error={workshops.error}
+            empty={!workshops.loading && !workshops.data?.length}
+            emptyTitle="No workshops scheduled"
+            emptyBody="Short sessions appear here when the academy publishes them."
+            count={2}
+          >
             <div className="grid gap-5 md:grid-cols-2">
               {workshops.data?.slice(0, 2).map((workshop) => (
                 <article key={workshop.id} className="rounded-[1.5rem] border border-line bg-white p-6">
@@ -120,14 +131,14 @@ export function HomePage() {
         </div>
       </section>
 
+      {stories.data?.length ? (
       <section className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <p className="text-xs font-semibold tracking-[0.22em] text-blue uppercase">Student stories</p>
           <h2 className="mt-3 font-display text-4xl tracking-tight">What the work feels like.</h2>
           <div className="mt-8">
-            <DataState loading={stories.loading} error={stories.error} empty={!stories.data?.length} count={2}>
-              <div className="grid gap-5 md:grid-cols-2">
-                {stories.data?.slice(0, 4).map((story) => (
+            <div className="grid gap-5 md:grid-cols-2">
+                {stories.data.slice(0, 4).map((story) => (
                   <figure key={story.id} className="rounded-[1.5rem] border border-line bg-mist p-6">
                     <Quote className="h-5 w-5 text-blue" />
                     <blockquote className="mt-4 text-lg leading-relaxed text-ink">{story.quote}</blockquote>
@@ -138,17 +149,17 @@ export function HomePage() {
                   </figure>
                 ))}
               </div>
-            </DataState>
           </div>
         </div>
       </section>
+      ) : null}
 
       <section className="mx-auto max-w-3xl px-5 py-20 sm:px-8">
         <h2 className="text-center font-display text-4xl tracking-tight">Questions, answered.</h2>
         <div className="mt-8">
-          <DataState loading={faqs.loading} error={faqs.error} empty={!faqs.data?.length} count={2}>
+          <DataState loading={faqs.loading} error={faqs.error && faqList.length === 0 ? faqs.error : null} empty={!faqs.loading && faqList.length === 0} count={2}>
             <div className="space-y-3">
-              {faqs.data?.slice(0, 4).map((faq) => (
+              {faqList.slice(0, 4).map((faq) => (
                 <details key={faq.id} className="rounded-2xl border border-line bg-white px-5 py-4">
                   <summary className="cursor-pointer font-semibold">{faq.question}</summary>
                   <p className="mt-3 text-sm leading-relaxed text-muted">{faq.answer}</p>

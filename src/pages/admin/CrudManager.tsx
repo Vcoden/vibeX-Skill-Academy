@@ -33,6 +33,7 @@ export function CrudManager({
   labelKey,
   fields,
   blank,
+  allowCreate = true,
 }: {
   title: string
   table: string
@@ -40,6 +41,7 @@ export function CrudManager({
   labelKey: string
   fields: FieldDef[]
   blank: Row
+  allowCreate?: boolean
 }) {
   const query = useQuery(() => fetchAdminTable<Row>(table, orderBy), `${table}-${orderBy}`)
   const [editing, setEditing] = useState<Row | null>(null)
@@ -102,9 +104,11 @@ export function CrudManager({
     <div>
       <div className="flex items-center justify-between gap-4">
         <h1 className="font-display text-4xl">{title}</h1>
-        <button type="button" onClick={() => start()} className="rounded-full bg-blue px-4 py-2 text-sm font-semibold text-white">
-          Add
-        </button>
+        {allowCreate ? (
+          <button type="button" onClick={() => start()} className="rounded-full bg-blue px-4 py-2 text-sm font-semibold text-white">
+            Add
+          </button>
+        ) : null}
       </div>
       {formError ? <p className="mt-4 text-sm text-rose-600">{formError}</p> : null}
       {editing ? (

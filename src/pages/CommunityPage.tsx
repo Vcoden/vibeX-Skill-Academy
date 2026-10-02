@@ -1,36 +1,60 @@
 import { Seo } from '@/components/Seo'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { DataState } from '@/components/ui/States'
 import { useQuery } from '@/hooks/useQuery'
-import { fetchCommunity } from '@/lib/api'
+import { fetchCommunity, fetchCommunityLinks } from '@/lib/api'
+
+const sections = ['Student Community', 'Team Groups', 'Announcements', 'Learning Discussions', 'Opportunities', 'Workshops', 'Mentorship']
 
 export function CommunityPage() {
-  const query = useQuery(() => fetchCommunity(), 'community')
+  const posts = useQuery(() => fetchCommunity(), 'community')
+  const links = useQuery(() => fetchCommunityLinks(), 'community-links')
 
   return (
     <>
       <Seo
         title="Community | VibeX Skills Academy"
-        description="Join the VibeX learning community for project feedback, office hours, and cohort support."
+        description="Learn together and grow together at VibeX Skills Academy."
       />
       <PageHeader
         eyebrow="Community"
-        title="A cohort, not a comment section."
-        text="Students learn with a team: skill circles, project showcases, mentor office hours, and practical conversations about client work."
+        title="Learn Together. Grow Together."
+        text="VibeX provides a community environment where learners can stay connected, share progress, receive information, and interact with other members."
       />
       <section className="mx-auto max-w-5xl px-5 py-14 sm:px-8">
-        <DataState loading={query.loading} error={query.error} empty={!query.data?.length}>
-          <div className="grid gap-5 md:grid-cols-2">
-            {query.data?.map((post) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sections.map((section) => (
+            <article key={section} className="rounded-[1.4rem] border border-line bg-white p-5">
+              <h2 className="font-display text-2xl">{section}</h2>
+            </article>
+          ))}
+        </div>
+        <div className="mt-10">
+          <h2 className="font-display text-3xl">Community links</h2>
+          {links.data?.length ? (
+            <ul className="mt-4 space-y-3">
+              {links.data.map((link) => (
+                <li key={link.id}>
+                  <a href={link.url} className="font-semibold text-blue" target="_blank" rel="noreferrer">
+                    {link.label} · {link.platform}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-muted">WhatsApp, Telegram, Discord, and other links appear here when an administrator publishes them.</p>
+          )}
+        </div>
+        {posts.data?.length ? (
+          <div className="mt-10 grid gap-5 md:grid-cols-2">
+            {posts.data.map((post) => (
               <article key={post.id} className="rounded-[1.5rem] border border-line bg-white p-6">
                 <p className="text-xs font-semibold tracking-[0.16em] text-blue uppercase">{post.kind}</p>
                 <h2 className="mt-2 font-display text-2xl">{post.title}</h2>
                 <p className="mt-3 leading-relaxed text-muted">{post.body}</p>
-                {post.author_name ? <p className="mt-4 text-sm font-semibold">{post.author_name}</p> : null}
               </article>
             ))}
           </div>
-        </DataState>
+        ) : null}
       </section>
     </>
   )

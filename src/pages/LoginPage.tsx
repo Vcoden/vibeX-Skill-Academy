@@ -46,6 +46,7 @@ export function LoginPage() {
             <Field label="Password" error={form.formState.errors.password?.message}>
               <input className="field" type="password" autoComplete="current-password" {...form.register('password')} />
             </Field>
+            <p className="text-sm"><Link to="/forgot-password" className="font-semibold text-blue">Forgot password</Link></p>
             {formError ? <p className="text-sm text-rose-600">{formError}</p> : null}
             <button type="submit" disabled={form.formState.isSubmitting} className="rounded-full bg-blue px-5 py-3 text-sm font-semibold text-white disabled:opacity-60">
               {form.formState.isSubmitting ? 'Signing in…' : 'Log in'}

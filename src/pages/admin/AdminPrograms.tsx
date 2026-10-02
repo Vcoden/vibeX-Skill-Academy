@@ -24,6 +24,8 @@ type Draft = {
   format_label: string
   risk_notice: string
   outcomes: string
+  audience: string
+  requirements: string
   is_published: boolean
   modules: ModuleDraft[]
 }
@@ -42,6 +44,8 @@ const emptyDraft = (): Draft => ({
   format_label: 'Online & Offline',
   risk_notice: '',
   outcomes: '',
+  audience: '',
+  requirements: '',
   is_published: true,
   modules: [{ title: '', summary: '' }],
 })
@@ -62,6 +66,8 @@ function fromCategory(program: Category): Draft {
     format_label: program.format_label,
     risk_notice: program.risk_notice ?? '',
     outcomes: (program.outcomes ?? []).join('\n'),
+    audience: (program.audience ?? []).join('\n'),
+    requirements: (program.requirements ?? []).join('\n'),
     is_published: program.is_published,
     modules: (program.modules ?? []).map((module) => ({
       id: module.id,
@@ -116,6 +122,9 @@ export function AdminPrograms() {
           format_label: draft.format_label.trim() || 'Online & Offline',
           risk_notice: draft.risk_notice.trim() || null,
           outcomes: draft.outcomes.split('\n').map((line) => line.trim()).filter(Boolean),
+          audience: draft.audience.split('\n').map((line) => line.trim()).filter(Boolean),
+          requirements: draft.requirements.split('\n').map((line) => line.trim()).filter(Boolean),
+          cover_url: null,
           is_published: draft.is_published,
         },
         modules,
@@ -175,6 +184,12 @@ export function AdminPrograms() {
           </div>
           <div className="md:col-span-2">
             <Field label="Outcomes" hint="One outcome per line."><textarea className="field min-h-24" value={draft.outcomes} onChange={(event) => setDraft({ ...draft, outcomes: event.target.value })} /></Field>
+          </div>
+          <div className="md:col-span-2">
+            <Field label="Who this program is for" hint="One audience per line."><textarea className="field min-h-24" value={draft.audience} onChange={(event) => setDraft({ ...draft, audience: event.target.value })} /></Field>
+          </div>
+          <div className="md:col-span-2">
+            <Field label="Requirements" hint="One requirement per line."><textarea className="field min-h-24" value={draft.requirements} onChange={(event) => setDraft({ ...draft, requirements: event.target.value })} /></Field>
           </div>
           <div className="md:col-span-2">
             <Field label="Risk notice" hint="Leave blank unless the program needs a financial-risk statement.">

@@ -4,7 +4,7 @@ import { DataState } from '@/components/ui/States'
 import { useAuth } from '@/context/AuthContext'
 import { useQuery } from '@/hooks/useQuery'
 import { fetchCategory, fetchModuleProgress, fetchMyEnrollment, setModuleProgress } from '@/lib/api'
-import { errorMessage } from '@/lib/format'
+import { enrollmentStatusLabel, errorMessage } from '@/lib/format'
 import { useState } from 'react'
 
 export function LearnPage() {
@@ -54,7 +54,7 @@ export function LearnPage() {
               <h1 className="mt-3 font-display text-4xl">{program.name}</h1>
               <p className="mt-3 text-muted">
                 {enrolled
-                  ? `Enrollment status: ${enrollmentQuery.data?.status}. Mark a module when you have worked through it.`
+                  ? `${enrollmentQuery.data ? enrollmentStatusLabel(enrollmentQuery.data.status) : 'Enrolled'}. Mark a module when you have worked through it.`
                   : 'Enroll to track your progress. You can still read the curriculum on the program page.'}
               </p>
               {!enrolled ? (

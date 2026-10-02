@@ -298,7 +298,11 @@ security definer
 set search_path = public
 as $$
 begin
-  if new.role is distinct from old.role and not public.is_admin() then
+  -- The SQL editor has no signed-in user, so it can set the first admins.
+  -- A signed-in student cannot change anyone's role.
+  if new.role is distinct from old.role
+     and auth.uid() is not null
+     and not public.is_admin() then
     new.role := old.role;
   end if;
   return new;
@@ -1037,3 +1041,326 @@ create policy "read receipt files" on storage.objects
       or name like 'receipts/' || auth.uid()::text || '/%'
     )
   );
+
+-- ---------------------------------------------------------------------------
+-- Course detail, certificates, community, and academy settings
+-- ---------------------------------------------------------------------------
+
+alter table public.course_categories
+  add column if not exists audience text[] not null default '{}',
+  add column if not exists requirements text[] not null default '{}',
+  add column if not exists cover_url text;
+
+alter table public.workshops
+  add column if not exists instructor text,
+  add column if not exists registration_status text not null default 'open';
+
+alter table public.testimonials
+  add column if not exists featured boolean not null default false,
+  add column if not exists quote_date date;
+
+create table if not exists public.course_roadmaps (
+  id uuid primary key default gen_random_uuid(),
+  course_category_id uuid not null references public.course_categories (id) on delete cascade,
+  week_number integer not null check (week_number between 1 and 4),
+  title text not null,
+  description text not null,
+  sort_order integer not null,
+  unique (course_category_id, week_number)
+);
+
+create table if not exists public.course_projects (
+  id uuid primary key default gen_random_uuid(),
+  course_category_id uuid not null references public.course_categories (id) on delete cascade,
+  title text not null,
+  description text not null,
+  difficulty text,
+  skills text,
+  outcome text,
+  sort_order integer not null default 0
+);
+
+create table if not exists public.project_progress (
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  project_id uuid not null references public.course_projects (id) on delete cascade,
+  completed boolean not null default true,
+  completed_at timestamptz not null default now(),
+  primary key (user_id, project_id)
+);
+
+create sequence if not exists public.certificate_number_seq;
+
+create table if not exists public.certificates (
+  id uuid primary key default gen_random_uuid(),
+  enrollment_id uuid references public.enrollments (id) on delete set null,
+  student_id uuid not null references public.profiles (id) on delete cascade,
+  certificate_number text not null unique,
+  student_name text not null,
+  program_name text not null,
+  issued_on date not null default current_date,
+  status text not null default 'valid' check (status in ('valid', 'revoked')),
+  file_url text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.professional_programs (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  title text not null,
+  description text not null,
+  duration_label text,
+  price numeric(12, 2),
+  requirements text,
+  application_process text,
+  status text not null default 'open',
+  starts_on date,
+  ends_on date,
+  is_published boolean not null default false,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.mentorship_programs (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text not null,
+  availability text,
+  application_status text not null default 'open',
+  is_published boolean not null default false,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.community_links (
+  id uuid primary key default gen_random_uuid(),
+  platform text not null,
+  label text not null,
+  url text not null,
+  is_published boolean not null default false,
+  sort_order integer not null default 0
+);
+
+create table if not exists public.social_links (
+  id uuid primary key default gen_random_uuid(),
+  platform text not null,
+  url text not null,
+  is_published boolean not null default false,
+  sort_order integer not null default 0
+);
+
+create table if not exists public.announcements (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text not null,
+  is_published boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.learning_resources (
+  id uuid primary key default gen_random_uuid(),
+  course_category_id uuid references public.course_categories (id) on delete cascade,
+  title text not null,
+  description text,
+  link_url text,
+  is_published boolean not null default false,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.site_settings (
+  id uuid primary key default gen_random_uuid(),
+  key text not null unique,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.course_roadmaps enable row level security;
+alter table public.course_projects enable row level security;
+alter table public.project_progress enable row level security;
+alter table public.certificates enable row level security;
+alter table public.professional_programs enable row level security;
+alter table public.mentorship_programs enable row level security;
+alter table public.community_links enable row level security;
+alter table public.social_links enable row level security;
+alter table public.announcements enable row level security;
+alter table public.learning_resources enable row level security;
+alter table public.site_settings enable row level security;
+
+grant select on public.course_roadmaps, public.course_projects, public.professional_programs,
+  public.mentorship_programs, public.community_links, public.social_links, public.site_settings
+  to anon, authenticated;
+grant select, insert, update, delete on public.course_roadmaps, public.course_projects, public.project_progress,
+  public.certificates, public.professional_programs, public.mentorship_programs, public.community_links,
+  public.social_links, public.announcements, public.learning_resources, public.site_settings
+  to authenticated;
+
+drop policy if exists "read roadmaps" on public.course_roadmaps;
+create policy "read roadmaps" on public.course_roadmaps
+  for select using (
+    public.is_admin()
+    or exists (
+      select 1 from public.course_categories c
+      where c.id = course_category_id and c.is_published
+    )
+  );
+
+drop policy if exists "admin write roadmaps" on public.course_roadmaps;
+create policy "admin write roadmaps" on public.course_roadmaps
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read projects" on public.course_projects;
+create policy "read projects" on public.course_projects
+  for select using (
+    public.is_admin()
+    or exists (
+      select 1 from public.course_categories c
+      where c.id = course_category_id and c.is_published
+    )
+  );
+
+drop policy if exists "admin write projects" on public.course_projects;
+create policy "admin write projects" on public.course_projects
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read own project progress" on public.project_progress;
+create policy "read own project progress" on public.project_progress
+  for select to authenticated
+  using (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists "write own project progress" on public.project_progress;
+create policy "write own project progress" on public.project_progress
+  for insert to authenticated
+  with check (user_id = auth.uid());
+
+drop policy if exists "update own project progress" on public.project_progress;
+create policy "update own project progress" on public.project_progress
+  for update to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+drop policy if exists "delete own project progress" on public.project_progress;
+create policy "delete own project progress" on public.project_progress
+  for delete to authenticated
+  using (user_id = auth.uid());
+
+drop policy if exists "read own certificates" on public.certificates;
+create policy "read own certificates" on public.certificates
+  for select to authenticated
+  using (student_id = auth.uid() or public.is_admin());
+
+drop policy if exists "admin write certificates" on public.certificates;
+create policy "admin write certificates" on public.certificates
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read professional programs" on public.professional_programs;
+create policy "read professional programs" on public.professional_programs
+  for select using (is_published or public.is_admin());
+
+drop policy if exists "admin write professional programs" on public.professional_programs;
+create policy "admin write professional programs" on public.professional_programs
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read mentorship programs" on public.mentorship_programs;
+create policy "read mentorship programs" on public.mentorship_programs
+  for select using (is_published or public.is_admin());
+
+drop policy if exists "admin write mentorship programs" on public.mentorship_programs;
+create policy "admin write mentorship programs" on public.mentorship_programs
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read community links" on public.community_links;
+create policy "read community links" on public.community_links
+  for select using (is_published or public.is_admin());
+
+drop policy if exists "admin write community links" on public.community_links;
+create policy "admin write community links" on public.community_links
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read social links" on public.social_links;
+create policy "read social links" on public.social_links
+  for select using (is_published or public.is_admin());
+
+drop policy if exists "admin write social links" on public.social_links;
+create policy "admin write social links" on public.social_links
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read announcements" on public.announcements;
+create policy "read announcements" on public.announcements
+  for select to authenticated
+  using (is_published or public.is_admin());
+
+drop policy if exists "admin write announcements" on public.announcements;
+create policy "admin write announcements" on public.announcements
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read learning resources" on public.learning_resources;
+create policy "read learning resources" on public.learning_resources
+  for select to authenticated
+  using (
+    public.is_admin()
+    or (
+      is_published
+      and exists (
+        select 1 from public.enrollments e
+        where e.student_id = auth.uid()
+          and e.status in ('enrolled', 'active', 'completed')
+          and (
+            learning_resources.course_category_id is null
+            or e.course_category_id = learning_resources.course_category_id
+          )
+      )
+    )
+  );
+
+drop policy if exists "admin write learning resources" on public.learning_resources;
+create policy "admin write learning resources" on public.learning_resources
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "read site settings" on public.site_settings;
+create policy "read site settings" on public.site_settings
+  for select using (true);
+
+drop policy if exists "admin write site settings" on public.site_settings;
+create policy "admin write site settings" on public.site_settings
+  for all to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create or replace function public.verify_certificate(p_number text)
+returns table (
+  certificate_number text,
+  student_name text,
+  program_name text,
+  issued_on date,
+  status text
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select c.certificate_number, c.student_name, c.program_name, c.issued_on, c.status
+  from public.certificates c
+  where upper(c.certificate_number) = upper(btrim(p_number))
+  limit 1;
+$$;
+
+revoke all on function public.verify_certificate(text) from public;
+grant execute on function public.verify_certificate(text) to anon, authenticated;

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Seo } from '@/components/Seo'
 import { Field } from '@/components/ui/Field'
@@ -16,6 +16,17 @@ type FormValues = { name: string; email: string; phone: string }
 
 export function WorkshopsPage() {
   const query = useQuery(() => fetchWorkshops(), 'workshops')
+  const groups = useMemo(() => {
+    const now = Date.now()
+    const upcoming: Workshop[] = []
+    const previous: Workshop[] = []
+    for (const workshop of query.data ?? []) {
+      const starts = workshop.starts_at ? new Date(workshop.starts_at).getTime() : Number.POSITIVE_INFINITY
+      if (!workshop.starts_at || starts >= now) upcoming.push(workshop)
+      else previous.push(workshop)
+    }
+    return { upcoming, previous }
+  }, [query.data])
   const { user, profile } = useAuth()
   const [active, setActive] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
@@ -65,9 +76,23 @@ export function WorkshopsPage() {
         text="Workshops are shorter live sessions. Seats, dates, prices, and descriptions are published from the academy database."
       />
       <section className="mx-auto max-w-5xl px-5 py-14 sm:px-8">
-        <DataState loading={query.loading} error={query.error} empty={!query.data?.length}>
-          <div className="space-y-5">
-            {query.data?.map((workshop) => (
+        <DataState
+          loading={query.loading}
+          error={query.error}
+          empty={!query.loading && !query.data?.length}
+          emptyTitle="No workshops scheduled"
+          emptyBody="Upcoming and previous sessions appear here when the academy publishes them. Registration stays closed until a workshop is listed."
+          count={2}
+        >
+          <div className="space-y-10">
+            {([
+              ['Upcoming', groups.upcoming],
+              ['Previous', groups.previous],
+            ] as const).map(([label, items]) => items.length ? (
+              <div key={label}>
+                <h2 className="font-display text-3xl">{label}</h2>
+                <div className="mt-5 space-y-5">
+            {items.map((workshop) => (
               <article key={workshop.id} className="rounded-[1.6rem] border border-line bg-white p-6">
                 {workshop.cover_url ? (
                   <img src={workshop.cover_url} alt="" className="mb-5 h-48 w-full rounded-2xl object-cover" />
@@ -82,11 +107,15 @@ export function WorkshopsPage() {
                 <p className="mt-4 max-w-3xl leading-relaxed text-muted">{workshop.description}</p>
                 <p className="mt-4 text-sm font-semibold text-slate-600">
                   {formatDate(workshop.starts_at)}
+                  {workshop.instructor ? ` · ${workshop.instructor}` : ''}
                   {workshop.location ? ` · ${workshop.location}` : ''}
+                  {workshop.registration_status ? ` · ${workshop.registration_status}` : ''}
                   {workshop.seats ? ` · ${workshop.seats} seats` : ''}
                 </p>
                 {done === workshop.id ? (
                   <p className="mt-4 font-semibold text-blue">You are registered. We will use the email you submitted.</p>
+                ) : workshop.registration_status === 'closed' ? (
+                  <p className="mt-4 text-sm font-semibold text-slate-500">Registration is closed.</p>
                 ) : (
                   <button
                     type="button"
@@ -125,6 +154,9 @@ export function WorkshopsPage() {
                 ) : null}
               </article>
             ))}
+                </div>
+              </div>
+            ) : null)}
           </div>
         </DataState>
       </section>

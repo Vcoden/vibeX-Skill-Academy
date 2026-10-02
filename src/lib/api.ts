@@ -1,19 +1,28 @@
 import { requireSupabase } from '@/lib/supabase'
 import type {
+  Announcement,
   Category,
+  Certificate,
+  CommunityLink,
   CommunityPost,
   ContactMessage,
+  CourseProject,
+  CourseRoadmap,
   Enrollment,
   Faq,
   JourneyStep,
+  LearningResource,
   Mentor,
+  MentorshipProgram,
   ModuleProgress,
+  ProfessionalProgram,
+  SocialLink,
   Testimonial,
   Workshop,
 } from '@/types/database'
 
 const categorySelect =
-  'id, slug, sort_order, code, name, subtitle, summary, description, icon, price, duration_days, format_label, risk_notice, outcomes, is_published, created_at, course_subcategories(id, course_category_id, title, summary, sort_order)'
+  'id, slug, sort_order, code, name, subtitle, summary, description, icon, price, duration_days, format_label, risk_notice, outcomes, audience, requirements, cover_url, is_published, created_at, course_subcategories(id, course_category_id, title, summary, sort_order), course_roadmaps(id, course_category_id, week_number, title, description, sort_order), course_projects(id, course_category_id, title, description, difficulty, skills, outcome, sort_order)'
 
 const enrollmentSelect =
   'id, enrollment_number, student_id, course_category_id, learning_format, status, amount_due, currency, submitted_at, verified_at, enrolled_at, completed_at, admin_notes, created_at, course_categories(id, slug, name, code, price, duration_days, icon), payments(id, enrollment_id, internal_payment_reference, student_bank_reference, amount, currency, payment_method, bank_name, account_name, transaction_date, status, verified_by, verified_at, rejection_reason, admin_notes, created_at, payment_receipts(id, payment_id, storage_bucket, storage_path, original_filename, mime_type, file_size, uploaded_by, created_at))'
@@ -27,6 +36,8 @@ type CategoryRow = Category & {
     summary: string | null
     sort_order: number
   }>
+  course_roadmaps?: CourseRoadmap[]
+  course_projects?: CourseProject[]
 }
 
 function sortModules(category: CategoryRow): Category {
@@ -37,11 +48,18 @@ function sortModules(category: CategoryRow): Category {
     summary: item.summary,
     sort_order: item.sort_order,
   }))
+  const roadmaps = (category.course_roadmaps ?? category.roadmaps ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
+  const projects = (category.course_projects ?? category.projects ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
   return {
     ...category,
     price: Number(category.price),
     outcomes: category.outcomes ?? [],
+    audience: category.audience ?? [],
+    requirements: category.requirements ?? [],
+    cover_url: category.cover_url ?? null,
     modules: modules.sort((a, b) => a.sort_order - b.sort_order),
+    roadmaps,
+    projects,
   }
 }
 
@@ -92,13 +110,21 @@ export async function fetchTestimonials() {
 
 export async function fetchWorkshops() {
   const db = requireSupabase()
-  const { data, error } = await db
-    .from('workshops')
-    .select('id, slug, title, summary, description, starts_at, mode, location, price_ngn, seats, cover_url, is_published, created_at')
-    .eq('is_published', true)
-    .order('starts_at', { ascending: true })
-  if (error) throw error
-  return (data ?? []) as Workshop[]
+  const columns = 'id, slug, title, summary, description, starts_at, mode, location, price_ngn, seats, cover_url, instructor, registration_status, is_published, created_at'
+  const basic = 'id, slug, title, summary, description, starts_at, mode, location, price_ngn, seats, cover_url, is_published, created_at'
+  let result = await db.from('workshops').select(columns).eq('is_published', true).order('starts_at', { ascending: true })
+  if (result.error && /instructor|registration_status/i.test(result.error.message)) {
+    result = await db.from('workshops').select(basic).eq('is_published', true).order('starts_at', { ascending: true })
+  }
+  if (result.error) {
+    if (/schema cache|does not exist|could not find|PGRST205/i.test(result.error.message)) return []
+    throw result.error
+  }
+  return ((result.data ?? []) as Workshop[]).map((workshop) => ({
+    ...workshop,
+    instructor: workshop.instructor ?? null,
+    registration_status: workshop.registration_status ?? 'open',
+  }))
 }
 
 export async function fetchJourney() {
@@ -341,6 +367,9 @@ export async function saveCategory(
     format_label: category.format_label,
     risk_notice: category.risk_notice,
     outcomes: category.outcomes,
+    audience: category.audience ?? [],
+    requirements: category.requirements ?? [],
+    cover_url: category.cover_url ?? null,
     is_published: category.is_published,
   }
   const query = category.id
@@ -433,20 +462,91 @@ export async function fetchMessages() {
 
 export async function fetchAdminStats() {
   const db = requireSupabase()
-  const [programs, enrollments, messages, workshops] = await Promise.all([
-    db.from('course_categories').select('id', { count: 'exact', head: true }),
-    db.from('enrollments').select('id', { count: 'exact', head: true }),
+  const now = new Date().toISOString()
+  const [students, pending, payments, programs, workshops, certificates, messages] = await Promise.all([
+    db.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+    db.from('enrollments').select('id', { count: 'exact', head: true }).in('status', ['pending_payment', 'payment_submitted']),
+    db.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'verified'),
+    db.from('course_categories').select('id', { count: 'exact', head: true }).eq('is_published', true),
+    db.from('workshops').select('id', { count: 'exact', head: true }).eq('is_published', true).gte('starts_at', now),
+    db.from('certificates').select('id', { count: 'exact', head: true }).eq('status', 'valid'),
     db.from('contact_messages').select('id', { count: 'exact', head: true }).eq('is_read', false),
-    db.from('workshops').select('id', { count: 'exact', head: true }),
   ])
-  const failed = [programs.error, enrollments.error, messages.error, workshops.error].find(Boolean)
+  const failed = [students.error, pending.error, payments.error, programs.error, workshops.error, certificates.error, messages.error].find(Boolean)
   if (failed) throw failed
   return {
+    students: students.count ?? 0,
+    pending: pending.count ?? 0,
+    verifiedPayments: payments.count ?? 0,
     programs: programs.count ?? 0,
-    enrollments: enrollments.count ?? 0,
-    unread: messages.count ?? 0,
     workshops: workshops.count ?? 0,
+    certificates: certificates.count ?? 0,
+    unread: messages.count ?? 0,
   }
+}
+
+export async function fetchSiteSettings() {
+  const db = requireSupabase()
+  const { data, error } = await db.from('site_settings').select('key, value')
+  if (error) throw error
+  return Object.fromEntries(((data ?? []) as Array<{ key: string; value: string }>).map((row) => [row.key, row.value]))
+}
+
+export async function fetchSocialLinks() {
+  const db = requireSupabase()
+  const { data, error } = await db.from('social_links').select('id, platform, url, is_published, sort_order').eq('is_published', true).order('sort_order')
+  if (error) throw error
+  return (data ?? []) as SocialLink[]
+}
+
+export async function fetchCommunityLinks() {
+  const db = requireSupabase()
+  const { data, error } = await db.from('community_links').select('id, platform, label, url, is_published, sort_order').eq('is_published', true).order('sort_order')
+  if (error) throw error
+  return (data ?? []) as CommunityLink[]
+}
+
+export async function fetchProfessionalPrograms() {
+  const db = requireSupabase()
+  const { data, error } = await db.from('professional_programs').select('id, slug, title, description, duration_label, price, requirements, application_process, status, starts_on, ends_on, is_published, sort_order').eq('is_published', true).order('sort_order')
+  if (error) throw error
+  return (data ?? []) as ProfessionalProgram[]
+}
+
+export async function fetchMentorshipPrograms() {
+  const db = requireSupabase()
+  const { data, error } = await db.from('mentorship_programs').select('id, title, description, availability, application_status, is_published, sort_order').eq('is_published', true).order('sort_order')
+  if (error) throw error
+  return (data ?? []) as MentorshipProgram[]
+}
+
+export async function fetchAnnouncements() {
+  const db = requireSupabase()
+  const { data, error } = await db.from('announcements').select('id, title, body, is_published, created_at').eq('is_published', true).order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as Announcement[]
+}
+
+export async function fetchMyResources() {
+  const db = requireSupabase()
+  const { data, error } = await db.from('learning_resources').select('id, course_category_id, title, description, link_url, is_published, sort_order').eq('is_published', true).order('sort_order')
+  if (error) throw error
+  return (data ?? []) as LearningResource[]
+}
+
+export async function fetchMyCertificates(userId: string) {
+  const db = requireSupabase()
+  const { data, error } = await db.from('certificates').select('id, enrollment_id, student_id, certificate_number, student_name, program_name, issued_on, status, file_url, created_at').eq('student_id', userId).order('issued_on', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as Certificate[]
+}
+
+export async function verifyCertificate(number: string) {
+  const db = requireSupabase()
+  const { data, error } = await db.rpc('verify_certificate', { p_number: number })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return (row ?? null) as Pick<Certificate, 'certificate_number' | 'student_name' | 'program_name' | 'issued_on' | 'status'> | null
 }
 
 export async function uploadMedia(path: string, file: File) {
